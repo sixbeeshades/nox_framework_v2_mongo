@@ -1,19 +1,27 @@
-import { isEmptyObject } from '../../utils/validation';
 import { NotFoundError } from '../../utils/errors';
 import { Job, JobResponse } from '../../utils/job';
-import logger from '@src/utils/logger';
 
-export class MongoService {
+export class DataService {
   constructor(private readonly model: any) {}
 
   async createRecord(job: Job): Promise<JobResponse> {
     try {
-      if (isEmptyObject(job.body))
+      if (!job.body)
         return { error: 'Error calling reateRecord: body is missing' };
-      const data = await this.model.create(job.body);
+      const fields = job.options?.fields || undefined;
+      const include = job.options?.include || undefined;
+      const data = await this.model.create(job.body, {
+        fields,
+        include,
+      });
+      if (include) {
+        const dataWithInclude = await this.model.findByPk(data.id, {
+          include,
+        });
+        return { data: dataWithInclude };
+      }
       return { data };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -22,14 +30,11 @@ export class MongoService {
     try {
       if (!job.id)
         return { error: 'Error calling updateRecord: id is missing' };
-      if (isEmptyObject(job.body))
+      if (!job.body)
         return { error: 'Error calling updateRecord: body is missing' };
-      const where = job.options?.where || {};
-      const populate = job.options?.populate || '';
-      let data = await this.model.findOne({
-        ...where,
-        _id: job.id,
-        deleted_at: null,
+      const where = job.options?.where || undefined;
+      const data = await this.model.findOne({
+        where: { ...where, id: job.id },
       });
       if (data === null) throw new NotFoundError('Record not found');
       const previousData = JSON.parse(JSON.stringify(data));
@@ -37,13 +42,16 @@ export class MongoService {
         data[prop] = job.body[prop];
       }
       const fields = job.options?.fields || undefined;
+      const include = job.options?.include || undefined;
       await data.save({ fields });
-      if (populate) {
-        data = await data.populate(populate).execPopulate();
+      if (include) {
+        const dataWithInclude = await this.model.findByPk(data.id, {
+          include,
+        });
+        return { data: dataWithInclude, previousData };
       }
       return { data, previousData };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -52,10 +60,12 @@ export class MongoService {
     try {
       let limit: number;
       const offset = job.options?.offset ? +job.options.offset : 0;
-      const where = job.options?.where || {};
-      const projection = job.options?.attributes || undefined;
-      const populate: any = job.options?.populate || '';
-      const sort = job.options?.sort || [];
+      const where = job.options?.where || undefined;
+      const attributes = job.options?.attributes || undefined;
+      const include = job.options?.include || undefined;
+      const order = job.options?.sort || undefined;
+      const group = job.options?.group || undefined;
+      const having = job.options?.having || undefined;
 
       if (job.options?.limit) {
         if (+job.options.limit === -1) {
@@ -67,36 +77,36 @@ export class MongoService {
         limit = 10;
       }
 
-      const data = await Promise.all([
-        this.model.find(where, projection, {
-          skip: offset,
-          limit,
-          populate,
-          sort,
-        }),
-        this.model.countDocuments(where),
-      ]);
-
-      return { data: data[0], offset, limit, count: data[1] };
+      const data = await this.model.findAndCountAll({
+        offset,
+        limit,
+        where,
+        attributes,
+        include,
+        order,
+        group,
+        having,
+      });
+      return { data: data.rows, offset, limit, count: data.count };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
 
   async countAllRecords(job: Job): Promise<JobResponse> {
     try {
-      const where = job.options?.where || {};
-
-      if (!job.options?.withDeleted) {
-        where.deleted_at = null;
-      }
-      const data = await this.model.countDocuments({
+      const where = job.options?.where || undefined;
+      const attributes = job.options?.attributes || undefined;
+      const include = job.options?.include || undefined;
+      const distinct = job.options?.distinct || undefined;
+      const data = await this.model.count({
         where,
+        attributes,
+        include,
+        distinct,
       });
       return { count: data };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -104,24 +114,17 @@ export class MongoService {
   async findRecordById(job: Job): Promise<JobResponse> {
     try {
       if (!job.id) return { error: 'Error Calling FindById: id is missing' };
-      const where = job.options?.where || {};
-      const projection = job.options?.attributes || undefined;
-      const populate: any = job.options?.populate || '';
-      if (!job.options?.withDeleted) {
-        where.deleted_at = null;
-      }
-      const data = await this.model.findOne(
-        { ...where, _id: job.id },
-        projection,
-        {
-          populate,
-        },
-      );
-      if (data === null && !job.options?.allowEmpty)
-        throw new NotFoundError('Record not found');
+      const where = job.options?.where || undefined;
+      const attributes = job.options?.attributes || undefined;
+      const include = job.options?.include || undefined;
+      const data = await this.model.findOne({
+        where: { ...where, id: job.id },
+        attributes,
+        include,
+      });
+      if (data === null) throw new NotFoundError('Record not found');
       return { data };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -132,24 +135,24 @@ export class MongoService {
         return {
           error: 'Error Calling findOneRecord: options.where is missing',
         };
-      const offset = job.options.offset ? +job.options.offset : 0;
+
       const where = job.options.where || undefined;
-      const projection = job.options.attributes || undefined;
-      const populate: any = job.options.populate || '';
-      const sort = job.options.sort || [];
-      if (!job.options.withDeleted) {
-        where.deleted_at = null;
-      }
-      const data = await this.model.findOne(where, projection, {
-        populate,
-        skip: offset,
-        sort,
+      const attributes = job.options.attributes || undefined;
+      const include = job.options.include || undefined;
+      const order = job.options.sort || undefined;
+      const group = job.options.group || undefined;
+      const having = job.options.having || undefined;
+      const data = await this.model.findOne({
+        where,
+        attributes,
+        include,
+        order,
+        group,
+        having,
       });
-      if (data === null && !job.options.allowEmpty)
-        throw new NotFoundError('Record not Found');
+      if (data === null) throw new NotFoundError('Record not Found');
       return { data };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -167,9 +170,6 @@ export class MongoService {
 
       const where = job.options.where || undefined;
       const fields = job.options.fields || undefined;
-      if (!job.options?.withDeleted) {
-        where.deleted_at = null;
-      }
       const data = await this.model.findOne({
         where,
       });
@@ -181,7 +181,6 @@ export class MongoService {
       await data.save({ fields });
       return { data, previousData };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }
@@ -190,26 +189,19 @@ export class MongoService {
     try {
       if (!job.id)
         return { error: 'Error calling deleteRecord: id is missing' };
-      const where = job.options?.where || {};
-      if (!job.options?.hardDelete) {
-        where.deleted_at = null;
-      }
+      const where = job.options?.where;
       const data = await this.model.findOne({
-        where: { ...where, _id: job.id },
+        where: { ...where, id: job.id },
       });
       if (data === null) throw new NotFoundError('Record not found');
-      if (job.options?.hardDelete) {
-        await data.remove();
-      } else {
-        if (!!job.owner && !!job.owner.id) {
-          data.updated_by = job.owner.id;
-        }
-        data.deleted_at = Date.now();
-        await data.save();
+      if (!!job.owner && !!job.owner.id) {
+        data.updated_by = job.owner.id;
       }
+      await data.destroy({
+        force: !!job.options?.hardDelete,
+      });
       return { data };
     } catch (error) {
-      logger.error(error);
       throw error;
     }
   }

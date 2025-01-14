@@ -1,94 +1,92 @@
-import HttpStatus from "http-status-codes";
-import { Response } from "express";
-import * as moment from "moment-timezone";
+import HttpStatus from 'http-status-codes';
+import { Response } from 'express';
 
 /* 
-  ResponseData
-  Add additional info to response data
- */
-const ResponseData = (data = {}) => ({ ...data });
+  Utility function to wrap response data.
+  Adds additional info to response data if required.
+*/
+const ResponseData = (data: any = {}) => ({ ...data });
 
 /**
- * 200 - Http ok response
- * @params {object} res - response object
- * @params {object} data - response data
- * @returns {object} http ok response
+ * Generic function for sending HTTP responses.
+ * @param res - response object
+ * @param status - HTTP status code
+ * @param data - response data (optional)
+ * @returns JSON response with the given status and data
  */
-export function Result(res: Response, data?: any) {
-  return res.status(HttpStatus.OK).json(ResponseData(data));
-}
+const sendResponse = (res: Response, status: number, data: any = {}) => {
+  return res.status(status).json(ResponseData(data));
+};
 
 /**
- * 201 - Http created response
- * @params {object} res - response object
- * @params {object} data - response data
- * @returns {object} http created response
+ * 200 - HTTP OK response
+ * @param res - response object
+ * @param data - response data (optional)
+ * @returns HTTP OK response
  */
-export function Created(res: Response, data?: any) {
-  return res.status(HttpStatus.CREATED).json(data);
-}
+export const Result = (res: Response, data?: any) =>
+  sendResponse(res, HttpStatus.OK, data);
 
 /**
- * 400 - Http bad request response
- * @params {object} res - response object
- * @params {object} data - response error data
- * @returns {object} http error response
+ * 201 - HTTP Created response
+ * @param res - response object
+ * @param data - response data (optional)
+ * @returns HTTP Created response
  */
-export function BadRequest(
+export const Created = (res: Response, data?: any) =>
+  sendResponse(res, HttpStatus.CREATED, data);
+
+/**
+ * 400 - HTTP Bad Request response
+ * @param res - response object
+ * @param data - response error data (optional)
+ * @returns HTTP Bad Request response
+ */
+export const BadRequest = (
   res: Response,
-  data = { error: {}, message: "Error" }
-) {
-  return res.status(HttpStatus.BAD_REQUEST).json(data);
-}
+  data = { error: {}, message: 'Error' },
+) => sendResponse(res, HttpStatus.BAD_REQUEST, data);
 
 /**
- * 401 - Http unauthorized response
- * @params {object} res - response object
- * @params {object} data - response error data
- * @returns {object} http error response
+ * 401 - HTTP Unauthorized response
+ * @param res - response object
+ * @param data - response error data (optional)
+ * @returns HTTP Unauthorized response
  */
-export function Unauthorized(
+export const Unauthorized = (
   res: Response,
-  data = { error: {}, message: "Error" }
-) {
-  return res.status(HttpStatus.UNAUTHORIZED).json(data);
-}
+  data = { error: {}, message: 'Error' },
+) => sendResponse(res, HttpStatus.UNAUTHORIZED, data);
 
 /**
- * 403 - Http forbidden response
- * @params {object} res - response object
- * @params {object} data - response error data
- * @returns {object} http error response
+ * 403 - HTTP Forbidden response
+ * @param res - response object
+ * @param data - response error data (optional)
+ * @returns HTTP Forbidden response
  */
-export function Forbidden(
+export const Forbidden = (
   res: Response,
-  data = { error: {}, message: "Error" }
-) {
-  return res.status(HttpStatus.FORBIDDEN).json(data);
-}
+  data = { error: {}, message: 'Error' },
+) => sendResponse(res, HttpStatus.FORBIDDEN, data);
 
 /**
- * 404 - Http NotFound response
- * @params {object} res - response object
- * @params {object} data - response error data
- * @returns {object} http NotFound response
+ * 404 - HTTP Not Found response
+ * @param res - response object
+ * @param data - response error data (optional)
+ * @returns HTTP Not Found response
  */
-export function NotFound(
+export const NotFound = (
   res: Response,
-  data = { error: {}, message: "Not Found" }
-) {
-  return res.status(HttpStatus.NOT_FOUND).json(data);
-}
+  data = { error: {}, message: 'Not Found' },
+) => sendResponse(res, HttpStatus.NOT_FOUND, data);
 
 /**
- * 500 - Http error response
- * @params {object} res - response object
- * @params {object} data - response error data
- * @returns {object} http error response
+ * 500 - HTTP Internal Server Error response
+ * @param res - response object
+ * @param data - response error data (optional)
+ * @returns HTTP Internal Server Error response
  */
-export function ErrorResponse(
+export const ErrorResponse = (
   res: Response,
-  data = { error: {}, message: "Error" }
-) {
-  return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(data);
-}
+  data = { error: {}, message: 'Error' },
+) => sendResponse(res, HttpStatus.INTERNAL_SERVER_ERROR, data);

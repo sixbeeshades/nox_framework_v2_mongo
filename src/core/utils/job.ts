@@ -35,8 +35,8 @@ export class Job {
   payload?: { [key: string]: any };
   body?: { [key: string]: any };
   options?: JobOptions;
-  response?: JobResponse | any;
-  status: "Pending" | "Completed" | "Errored";
+  response?: JobResponse;
+  status: 'Pending' | 'Completed' | 'Errored';
 
   constructor(job: any) {
     job = job || {};
@@ -46,7 +46,7 @@ export class Job {
     this.payload = job.paylaod || {};
     this.body = job.body || {};
     this.options = job.options || {};
-    this.response = job.response || {};
-    this.status = job.status || "Pending";
+    this.response = job.response || { error: null, data: null };
+    this.status = job.status || 'Pending';
   }
 }

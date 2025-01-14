@@ -1,4 +1,4 @@
-import { prop, getModelForClass } from "@typegoose/typegoose";
+import { prop, getModelForClass } from '@typegoose/typegoose';
 
 interface IParentSchema {
   active: boolean;

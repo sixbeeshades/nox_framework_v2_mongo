@@ -1,22 +1,42 @@
-import crypto from "crypto";
-import bcrypt from "bcrypt";
-import { v1 as uuidv1 } from "uuid";
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { v1 as uuidv1 } from 'uuid';
 
-const saltRound = 10;
+const SALT_ROUNDS = 10;
 
-export function createRandomKey(bites: number) {
-  return crypto.randomBytes(bites || 8).toString("hex");
+/**
+ * Creates a random key in hexadecimal format.
+ * @param {number} bytes - The number of bytes to generate.
+ * @returns {string} The generated random key in hexadecimal format.
+ */
+export function createRandomKey(bytes: number = 8): string {
+  return crypto.randomBytes(bytes).toString('hex');
 }
 
+/**
+ * Generates a bcrypt hash for the given password.
+ * @param {string} password - The password to hash.
+ * @returns {Promise<string>} The hashed password.
+ */
 export async function generateHash(password: string): Promise<string> {
-  return await bcrypt.hash(password, saltRound);
+  return bcrypt.hash(password, SALT_ROUNDS);
 }
 
+/**
+ * Compares a password with a stored hash.
+ * @param {string} pass - The password to compare.
+ * @param {string} hash - The stored hash.
+ * @returns {Promise<boolean>} Whether the password matches the hash.
+ */
 export async function compareHash(
   pass: string,
-  hash: string
+  hash: string,
 ): Promise<boolean> {
-  return await bcrypt.compare(pass, hash);
+  return bcrypt.compare(pass, hash);
 }
 
+/**
+ * Generates a unique identifier using UUID v1.
+ * @returns {string} The generated UUID.
+ */
 export const uuid = (): string => uuidv1();

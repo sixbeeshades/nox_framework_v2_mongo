@@ -1,11 +1,12 @@
-import { MongoService } from './mongo.service';
+import { DataService } from './sql.service';
 import { Job, JobResponse } from '../../utils/job';
 import logger from '@src/utils/logger';
 
-export abstract class ModelService extends MongoService {
+export abstract class ModelService extends DataService {
   constructor(model: any) {
     super(model);
   }
+
   async doBeforeRead(job: Job): Promise<void> {
     job.response = job.response ?? { error: null };
     job.response.error = false;
