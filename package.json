@@ -1,5 +1,5 @@
 {
-  "name": "happical-api",
+  "name": "nox_framework",
   "version": "1.0.0",
   "main": "dist/app.js",
   "scripts": {
